@@ -27,16 +27,18 @@ class PlayState(State):
         super().__init__(game)
         self.game = game
         self.is_paused = False
+        self.game_over = False
         
         # Fuentes y UI
         self.title_font = pygame.font.SysFont("arial", 40, bold=True)
         self.text_font = pygame.font.SysFont("arial", 28)
         self.back_button = Button((20, 20, 180, 50), "Volver al menú", self.text_font, self.go_menu)
 
-        # Variables de juego [cite: 3]
-        self.time_left = 120.0
+        # Variables de juego
+        self.time_left = 60.0
         self.score = 0
-        self.level = int(self.game.data['level'].split()[-1]) # Extrae el número del nivel [cite: 3]
+        self.lives = 9  # Sistema de 3 vidas (corazones)
+        self.level = int(self.game.data['level'].split()[-1])
         
         # Nave Jugador
         try:
@@ -51,15 +53,14 @@ class PlayState(State):
         self.player_rect.bottom = SCREEN_HEIGHT - 20
         self.speed = 450 
 
-        # Balas y Enemigos 
-        self.bullets = []         # Balas del jugador
-        self.enemy_bullets = []   # Balas de enemigos
+        # Balas y Enemigos
+        self.bullets = []         
+        self.enemy_bullets = []   
         self.enemies = []
         self.bullet_speed = 600
         
-        # Lógica de aparición (Spawn)
+        # Lógica de aparición
         self.spawn_timer = 0
-        # La dificultad escala con el nivel: más nivel = spawn más rápido 
         self.spawn_rate = max(0.5, 2.0 - (self.level * 0.2)) 
 
     def go_menu(self):
@@ -78,13 +79,16 @@ class PlayState(State):
         for event in events:
             self.back_button.handle_event(event)
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_p:
+                if event.key == pygame.K_p and not self.game_over:
                     self.is_paused = not self.is_paused
-                if event.key == pygame.K_SPACE and not self.is_paused:
+                if event.key == pygame.K_SPACE and not self.is_paused and not self.game_over:
                     self.shoot()
+                # Reiniciar si hay Game Over
+                if event.key == pygame.K_r and self.game_over:
+                    self.game.change_state(PlayState(self.game))
 
     def update(self, dt):
-        if self.is_paused: return
+        if self.is_paused or self.game_over: return
 
         if self.time_left > 0:
             self.time_left -= dt
@@ -97,24 +101,31 @@ class PlayState(State):
             self.player_rect.x += self.speed * dt
         self.player_rect.clamp_ip(pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT))
 
-        # Generar Enemigos poco a poco
+        # Generar Enemigos
         self.spawn_timer += dt
         if self.spawn_timer >= self.spawn_rate:
-            enemy_speed = 100 + (self.level * 20) # Dificultad: más velocidad por nivel
-            shoot_delay = max(1000, 3000 - (self.level * 300)) # Disparan más rápido
-            new_enemy = Enemy(random.randint(0, SCREEN_WIDTH - 40), -40, enemy_speed, shoot_delay)
+            enemy_speed = 100 + (self.level * 20)
+            shoot_delay = max(1000, 3000 - (self.level * 300))
+            margen = 100
+            area_inicio = margen
+            area_fin = SCREEN_WIDTH - margen - 40
+            new_enemy = Enemy(random.randint(area_inicio, area_fin), -40, enemy_speed, shoot_delay)
             self.enemies.append(new_enemy)
             self.spawn_timer = 0
 
-        # Actualizar Enemigos y sus disparos 
+        # Actualizar Enemigos
         for e in self.enemies[:]:
             e.update(dt)
             if e.can_shoot():
                 self.enemy_shoot(e)
-            if e.rect.top > SCREEN_HEIGHT:
+            
+            # Si el enemigo llega al final o toca al jugador
+            if e.rect.top > SCREEN_HEIGHT or e.rect.colliderect(self.player_rect):
+                self.lives -= 1
                 self.enemies.remove(e)
+                if self.lives <= 0: self.game_over = True
 
-        # Actualizar Balas Jugador y Colisiones 
+        # Actualizar Balas Jugador y Colisiones
         for b in self.bullets[:]:
             b.y -= self.bullet_speed * dt
             if b.bottom < 0: self.bullets.remove(b)
@@ -123,7 +134,7 @@ class PlayState(State):
                 if b.colliderect(e.rect):
                     if b in self.bullets: self.bullets.remove(b)
                     self.enemies.remove(e)
-                    self.score += 10 # Sumar puntaje 
+                    self.score += 10
 
         # Actualizar Balas Enemigas
         for eb in self.enemy_bullets[:]:
@@ -131,21 +142,25 @@ class PlayState(State):
             if eb.top > SCREEN_HEIGHT: self.enemy_bullets.remove(eb)
             
             if eb.colliderect(self.player_rect):
-                print("¡Jugador golpeado!") # Aquí iría la lógica de vidas 
+                self.lives -= 1
                 self.enemy_bullets.remove(eb)
+                if self.lives <= 0: self.game_over = True
+
+    def draw_lives(self, screen):
+        # Dibujar "Corazones" como rectángulos pequeños (puedes cambiarlos por imágenes)
+        for i in range(self.lives):
+            pygame.draw.rect(screen, RED, (40 + (i * 35), 40, 25, 25))
 
     def draw(self, screen):
-        # Dibujar Balas Jugador
+        # Dibujar Balas
         for bullet in self.bullets:
-            pygame.draw.rect(screen, WHITE, bullet)
-
-        # Dibujar Balas Enemigas
+            pygame.draw.rect(screen, YELLOW, bullet)
         for e_bullet in self.enemy_bullets:
             pygame.draw.rect(screen, RED, e_bullet)
 
         # Dibujar Enemigos
         for e in self.enemies:
-            pygame.draw.rect(screen, RED, e.rect) 
+            pygame.draw.rect(screen, RED, e.rect)
 
         # Dibujar Nave
         if self.player_img:
@@ -153,18 +168,29 @@ class PlayState(State):
         else:
             pygame.draw.rect(screen, LIGHT_BLUE, self.player_rect)
 
-        # UI [cite: 3]
-        timer_text = self.title_font.render(f"Tiempo: {int(self.time_left)}", True, YELLOW)
-        screen.blit(timer_text, (SCREEN_WIDTH - 200, 40))
+        # UI y Vidas
+        self.draw_lives(screen)
         
-        score_text = self.text_font.render(f"Puntaje: {self.score}", True, GREEN)
+        timer_text = self.text_font.render(f"Tiempo: {int(self.time_left)}s", True, YELLOW)
+        screen.blit(timer_text, (SCREEN_WIDTH - 180, 40))
+        
+        score_text = self.text_font.render(f"Score: {self.score}", True, GREEN)
         screen.blit(score_text, (40, 80))
 
-        level_display = self.text_font.render(f"Nivel: {self.level}", True, WHITE)
-        screen.blit(level_display, (40, 120))
-
+        # Pantallas Especiales
         if self.is_paused:
-            p_text = self.title_font.render("PAUSA (P)", True, WHITE)
-            screen.blit(p_text, (SCREEN_WIDTH//2 - 80, SCREEN_HEIGHT//2))
+            p_text = self.title_font.render("PAUSA", True, WHITE)
+            screen.blit(p_text, (SCREEN_WIDTH//2 - 60, SCREEN_HEIGHT//2))
+
+        if self.game_over:
+            # Fondo oscuro para el Game Over
+            overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 180))
+            screen.blit(overlay, (0,0))
+            
+            go_text = self.title_font.render("GAME OVER", True, RED)
+            retry_text = self.text_font.render("Presiona 'R' para reintentar", True, WHITE)
+            screen.blit(go_text, (SCREEN_WIDTH//2 - 100, SCREEN_HEIGHT//2 - 50))
+            screen.blit(retry_text, (SCREEN_WIDTH//2 - 140, SCREEN_HEIGHT//2 + 20))
 
         self.back_button.draw(screen)

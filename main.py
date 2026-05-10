@@ -1,4 +1,4 @@
-# ESTE ES EL ARCHIVO mai.py
+# ESTE ES EL ARCHIVO main.py
 
 # punto de entrada principal del juego
 # aqui solo arrancamos el juego, nada mas
