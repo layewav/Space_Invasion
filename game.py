@@ -1,7 +1,7 @@
 # archivo game.py
 
 import pygame
-from settings import SCREEN_WIDTH, SCREEN_HEIGHT, GAME_TITLE, FPS, DARK_BLUE
+from settings import LIGHT_BLUE, SCREEN_WIDTH, SCREEN_HEIGHT, GAME_TITLE, FPS, DARK_BLUE
 from states.menu_state import MenuState
 
 
@@ -76,9 +76,10 @@ class Game:
             pygame.display.flip()
 
         pygame.quit()
-
-
-
-
-
-
+def draw(self, screen):
+    # Si la imagen cargó, la dibujamos
+    if self.player_img:
+        screen.blit(self.player_img, self.player_rect)
+    else:
+        # Si no hay imagen, dibujamos un cuadro azul para probar movimiento
+        pygame.draw.rect(screen, LIGHT_BLUE, self.player_rect)

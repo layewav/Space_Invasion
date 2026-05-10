@@ -1,29 +1,12 @@
-
-
 # states/play_state.py
 
 import pygame
 from core.state import State
 from core.button import Button
-from settings import WHITE, YELLOW, GREEN
+from settings import WHITE, YELLOW, GREEN, SCREEN_WIDTH, SCREEN_HEIGHT, LIGHT_BLUE
 
 
 class PlayState(State):
-    """
-    Este estado representa la base del juego
-
-    Todavia no tiene enemigos, disparos ni sistema de oleadas
-    Pero ya sirve como base para que luego agreguen:
-    1. nave del jugador
-    2. enemigos
-    3. balas
-    4. colisiones
-    5. vidas
-    6. puntaje
-    7. power-ups
-    8. sonidos
-    """
-
     def __init__(self, game):
         super().__init__(game)
 
@@ -34,11 +17,26 @@ class PlayState(State):
 
         self.time_left = 120.0
         self.score = 0
+        self.game = game
+        
+        # CARGA DE NAVE
+        try:
+            self.player_img = pygame.image.load("assets/nave.jpg").convert_alpha()
+            self.player_img = pygame.transform.scale(self.player_img, (50, 50))
+            self.player_rect = self.player_img.get_rect()
+        except:
+            print("No se encontró assets/nave.jpg, usando cuadro temporal")
+            self.player_img = None
+            self.player_rect = pygame.Rect(0, 0, 50, 50)
+
+        #Posición inicial de la nave
+        self.player_rect.centerx = SCREEN_WIDTH // 2
+        self.player_rect.bottom = SCREEN_HEIGHT - 20
+        self.speed = 450 
+
+        #
 
     def go_menu(self):
-        """
-        Regresa al menu principal
-        """
         from states.menu_state import MenuState
         self.game.change_state(MenuState(self.game))
 
@@ -47,12 +45,29 @@ class PlayState(State):
             self.back_button.handle_event(event)
 
     def update(self, dt):
+        # Actualizar cronómetro
         if self.time_left > 0:
             self.time_left -= dt
             if self.time_left < 0:
                 self.time_left = 0
 
+        # LÓGICA DE MOVIMIENTO ---
+        keys = pygame.key.get_pressed()
+        
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            self.player_rect.x -= self.speed * dt
+            
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            self.player_rect.x += self.speed * dt
+
+        # Limitar bordes
+        if self.player_rect.left < 0:
+            self.player_rect.left = 0
+        if self.player_rect.right > SCREEN_WIDTH:
+            self.player_rect.right = SCREEN_WIDTH
+
     def draw(self, screen):
+        # Dibujar info del juego (Texto)
         mode_text = self.text_font.render(f"Modo: {self.game.data['mode']}", True, WHITE)
         difficulty_text = self.text_font.render(f"Dificultad: {self.game.data['difficulty']}", True, WHITE)
         level_text = self.text_font.render(f"Nivel: {self.game.data['level']}", True, WHITE)
@@ -67,23 +82,11 @@ class PlayState(State):
         score_text = self.title_font.render(f"Puntaje: {self.score}", True, GREEN)
         screen.blit(score_text, (40, 240))
 
-        placeholder_lines = [
-            "AQUI VA LA BASE DEL NIVEL",
-            "Despues aqui pueden agregar:",
-            "1. nave del jugador",
-            "2. enemigos",
-            "3. disparos",
-            "4. colisiones",
-            "5. oleadas",
-            "6. sonidos",
-            "7. skins",
-            "8. mapa personalizable",
-        ]
-
-        y = 320
-        for line in placeholder_lines:
-            text = self.text_font.render(line, True, WHITE)
-            screen.blit(text, (40, y))
-            y += 35
+        #DIBUJAR LA NAVE ---
+        if self.player_img:
+            screen.blit(self.player_img, self.player_rect)
+        else:
+            # Cuadro azul de respaldo si falla la imagen
+            pygame.draw.rect(screen, LIGHT_BLUE, self.player_rect)
 
         self.back_button.draw(screen)
