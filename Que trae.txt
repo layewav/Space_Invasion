@@ -1,0 +1,14 @@
+
+Que trae lo que hice?
+
+Esto ya trae:
+arrancar el juego
+abrir ventana
+navegar por menus
+elegir modo
+elegir dificultad
+elegir nivel
+entrar a una pantalla base del juego
+guardar la selección del jugador en game.data
+tener una arquitectura por estados
+reutilizar botones

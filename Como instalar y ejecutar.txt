@@ -1,0 +1,16 @@
+
+Como instalar y ejecutar
+
+Primero instala pygame: pip install pygame
+
+Si no funciona: py -m pip install pygame
+
+Luego ejecuta: python main.py
+
+o:  py main.py
+
+
+
+
+
+

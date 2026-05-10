@@ -1,0 +1,17 @@
+
+Que se pueden agregar?
+Sobre ya esta ya pueden agregar:
+nave del jugador
+movimiento izquierda/derecha
+disparos
+enemigos
+colisiones
+puntaje real
+vidas
+game over
+pausa
+fondo animado
+música
+skins
+tabla de puntuaciones
+guardado de jugadores
