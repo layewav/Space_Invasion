@@ -159,19 +159,19 @@ class PlayState(State):
         # La dificultad cambia vidas, velocidad de enemigos,
         # disparos enemigos y aparicion de enemigos.
         if self.difficulty == "FACIL":
-            self.lives = 9
+            self.lives = 6
             self.enemy_speed_extra = 0
             self.enemy_shoot_extra = 0
             self.spawn_extra = 0.4
 
         elif self.difficulty == "NORMAL":
-            self.lives = 6
+            self.lives = 4
             self.enemy_speed_extra = 40
             self.enemy_shoot_extra = 400
             self.spawn_extra = 0
 
         elif self.difficulty == "DIFICIL":
-            self.lives = 3
+            self.lives = 2
             self.enemy_speed_extra = 90
             self.enemy_shoot_extra = 900
             self.spawn_extra = -0.3
@@ -211,25 +211,42 @@ class PlayState(State):
             # Si no carga, los enemigos se dibujan como cuadros rojos.
             self.enemy_img = None
 
+        # --- CARGA DE TEXTURAS DE CORAZONES ---
+        try:
+            corazon_lleno_path = os.path.join(base_path, "assets", "corazonlleno.png")
+            medio_corazon_path = os.path.join(base_path, "assets", "mediocorazon.png")
+
+            self.img_corazon_lleno = pygame.image.load(corazon_lleno_path).convert_alpha()
+            self.img_corazon_lleno = pygame.transform.scale(self.img_corazon_lleno, (25, 25))
+
+            self.img_medio_corazon = pygame.image.load(medio_corazon_path).convert_alpha()
+            self.img_medio_corazon = pygame.transform.scale(self.img_medio_corazon, (25, 25))
+        except Exception as error:
+            print("No se pudieron cargar las imágenes de los corazones:", error)
+            self.img_corazon_lleno = None
+            self.img_medio_corazon = None
+
         # --- CARGA DE EFECTOS DE SONIDO ---
         try:
             self.snd_laser = pygame.mixer.Sound(os.path.join(base_path, "assets", "urlaser.wav"))
             self.snd_explosion = pygame.mixer.Sound(os.path.join(base_path, "assets", "explosion.mp3"))
             self.snd_hurt = pygame.mixer.Sound(os.path.join(base_path, "assets", "golpe.wav"))
             self.snd_gameover = pygame.mixer.Sound(os.path.join(base_path, "assets", "gameover.wav"))
+            self.snd_elaser = pygame.mixer.Sound(os.path.join(base_path, "assets", "elaser.wav"))
 
             # Ajustes de volúmenes por defecto (valores entre 0.0 y 1.0)
             self.snd_laser.set_volume(0.37)
-            self.snd_explosion.set_volume(0.05)
+            self.snd_explosion.set_volume(0.035)
             self.snd_hurt.set_volume(0.37)
             self.snd_gameover.set_volume(0.5)
+            self.snd_elaser.set_volume(0.25)
         except Exception as error:
             print("No se pudieron cargar los efectos de sonido:", error)
             self.snd_laser = None
             self.snd_explosion = None
             self.snd_hurt = None
             self.snd_gameover = None
-            self.snd_victory = None
+            self.snd_elaser = None
 
         # Posicion inicial de la nave.
         self.player_rect.centerx = SCREEN_WIDTH // 2
@@ -293,6 +310,9 @@ class PlayState(State):
         # La bala enemiga aparece debajo del enemigo.
         new_bullet = pygame.Rect(enemy.rect.centerx - 2, enemy.rect.bottom, 5, 10)
         self.enemy_bullets.append(new_bullet)
+        # Sonido de disparo del enemigo
+        if self.snd_elaser:
+            self.snd_elaser.play()
 
     def trigger_game_over(self):
         """
@@ -530,9 +550,29 @@ class PlayState(State):
         vidas_text = self.text_font.render("Vidas:", True, WHITE)
         screen.blit(vidas_text, (40, 255))
 
-        # Dibujamos las vidas como cuadritos rojos, no puse los corazones xD.
-        for i in range(self.lives):
-            pygame.draw.rect(screen, RED, (125 + (i * 35), 260, 25, 25))
+        # Dibujamos las vidas mapeando los puntos de salud a 3 contenedores de corazones
+        for i in range(3):
+            pos_x = 125 + (i * 35)
+            pos_y = 260
+
+            # Calculamos cuánta salud le resta a este corazón en específico (2 puntos por corazón)
+            heart_health = self.lives - (i * 2)
+
+            if heart_health >= 2:
+                # Corazón completo disponible
+                if self.img_corazon_lleno:
+                    screen.blit(self.img_corazon_lleno, (pos_x, pos_y))
+                else:
+                    pygame.draw.rect(screen, RED, (pos_x, pos_y, 25, 25))
+            elif heart_health == 1:
+                # Medio corazón disponible
+                if self.img_medio_corazon:
+                    screen.blit(self.img_medio_corazon, (pos_x, pos_y))
+                else:
+                    pygame.draw.rect(screen, YELLOW, (pos_x, pos_y, 12, 25))
+            else:
+                # Corazón vacío (0 puntos de vida correspondientes)
+                pass
 
     def draw(self, screen):
         """
