@@ -1,1 +1,7 @@
-/__pycache__/
+# Ignoramos carpetas que Python crea automaticamente.
+# Estas carpetas no se deben subir porque no son necesarias.
+__pycache__/
+
+# Ignoramos archivos compilados de Python.
+# Python los puede volver a crear solo.
+*.pyc

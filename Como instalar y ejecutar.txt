@@ -1,16 +1,54 @@
+COMO INSTALAR Y EJECUTAR SPACE INVASION
 
-Como instalar y ejecutar
+OPCION FACIL:
 
-Primero instala pygame: pip install pygame
+1. Abrir la carpeta principal del juego.
 
-Si no funciona: py -m pip install pygame
+2. Dar doble clic en:
 
-Luego ejecuta: python main.py
+iniciar_juego.bat
 
-o:  py main.py
-
-
-
+Ese archivo instala automaticamente las librerias necesarias y despues abre el juego.
 
 
+OPCION MANUAL:
 
+1. Tener Python instalado.
+
+2. Abrir la terminal en la carpeta principal del proyecto.
+
+3. Instalar pygame con este comando:
+
+py -m pip install pygame
+
+4. Ejecutar el juego con:
+
+py main.py
+
+
+CONTROLES:
+
+A / Flecha izquierda = mover izquierda
+D / Flecha derecha = mover derecha
+ESPACIO = disparar
+P = pausar
+ENTER = comenzar nivel
+R = reiniciar cuando ganas o pierdes
+M = volver al menu cuando ganas o pierdes
+ESC = volver al menu en cualquier momento
+
+
+COMBINACION SECRETA PARA PRUEBAS:
+
+CTRL + SHIFT + U = desbloquear todos los niveles
+
+
+NOTA:
+
+No borrar las carpetas:
+
+assets
+core
+states
+
+porque el juego las necesita para funcionar.

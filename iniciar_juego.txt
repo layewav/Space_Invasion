@@ -1,0 +1,22 @@
+@echo off
+title SPACE INVASION
+
+echo ================================
+echo       SPACE INVASION
+echo ================================
+echo.
+
+echo Entrando a la carpeta del juego...
+cd /d "%~dp0"
+
+echo.
+echo Revisando e instalando librerias necesarias...
+py -m pip install -r requirements.txt
+
+echo.
+echo Iniciando el juego...
+py main.py
+
+echo.
+echo El juego se cerro.
+pause
