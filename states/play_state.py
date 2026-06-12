@@ -248,6 +248,13 @@ class PlayState(State):
             self.snd_gameover = None
             self.snd_elaser = None
 
+        # Carga de musica de fondo
+        try:
+            pygame.mixer.music.load(os.path.join(base_path, "assets", "wormhole.mp3"))
+            pygame.mixer.music.set_volume(0.25)  # Ajusta el volumen de la música de fondo
+        except Exception as error:
+            print("No se pudo cargar la música de fondo:", error)
+
         # Posicion inicial de la nave.
         self.player_rect.centerx = SCREEN_WIDTH // 2
         self.player_rect.bottom = SCREEN_HEIGHT - 20
@@ -288,6 +295,7 @@ class PlayState(State):
 
         from states.menu_state import MenuState
         self.game.change_state(MenuState(self.game))
+        pygame.mixer.music.stop()
 
     def shoot(self):
         """
@@ -321,6 +329,7 @@ class PlayState(State):
         self.game_over = True
         if self.snd_gameover:
             self.snd_gameover.play()
+        pygame.mixer.music.stop()
 
     def handle_events(self, events):
         """
@@ -340,8 +349,9 @@ class PlayState(State):
 
                 # Antes de empezar, ENTER inicia el nivel.
                 if self.waiting_start:
-                    if event.key == pygame.K_RETURN:
+                    if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
                         self.waiting_start = False
+                        pygame.mixer.music.play(loops=-1)
                     return
 
                 # Si ya ganaste o perdiste:
@@ -350,6 +360,7 @@ class PlayState(State):
                 if self.level_complete or self.game_over:
                     if event.key == pygame.K_r:
                         self.game.change_state(PlayState(self.game))
+                        pygame.mixer.music.stop()
 
                     if event.key == pygame.K_m:
                         self.go_menu()
@@ -665,7 +676,7 @@ class PlayState(State):
             self.draw_center_text(screen, f"Modo: {self.mode}", self.text_font, WHITE, SCREEN_HEIGHT // 2 - 70)
             self.draw_center_text(screen, f"Dificultad: {self.difficulty}", self.text_font, WHITE, SCREEN_HEIGHT // 2 - 30)
             self.draw_center_text(screen, f"Nivel: {self.level}", self.text_font, WHITE, SCREEN_HEIGHT // 2 + 10)
-            self.draw_center_text(screen, "Presiona ENTER para comenzar", self.text_font, GREEN, SCREEN_HEIGHT // 2 + 80)
+            self.draw_center_text(screen, "Presiona Espacio o ENTER para comenzar", self.text_font, GREEN, SCREEN_HEIGHT // 2 + 80)
 
         # Pantalla de pausa.
         if self.is_paused:
