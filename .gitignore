@@ -5,3 +5,6 @@ __pycache__/
 # Ignoramos archivos compilados de Python.
 # Python los puede volver a crear solo.
 *.pyc
+
+# Ignoramos el entorno virtual
+.venv/
