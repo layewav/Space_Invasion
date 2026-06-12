@@ -94,6 +94,7 @@ class PlayState(State):
     - Game Over.
     - Nivel completado.
     - Desbloqueo de niveles.
+    - Efectos de Sonido
     """
 
     def __init__(self, game):
@@ -111,6 +112,11 @@ class PlayState(State):
         self.game_over = False
         self.waiting_start = True
         self.level_complete = False
+
+        # Inicializar el mezclador de Pygame para el audio.
+        pygame.mixer.pre_init(44100, -16, 2, 512)
+        pygame.mixer.init()
+        pygame.mixer.set_num_channels(32)
 
         # Fuentes para textos.
         self.title_font = pygame.font.SysFont("arial", 40, bold=True)
@@ -205,6 +211,26 @@ class PlayState(State):
             # Si no carga, los enemigos se dibujan como cuadros rojos.
             self.enemy_img = None
 
+        # --- CARGA DE EFECTOS DE SONIDO ---
+        try:
+            self.snd_laser = pygame.mixer.Sound(os.path.join(base_path, "assets", "urlaser.wav"))
+            self.snd_explosion = pygame.mixer.Sound(os.path.join(base_path, "assets", "explosion.mp3"))
+            self.snd_hurt = pygame.mixer.Sound(os.path.join(base_path, "assets", "golpe.wav"))
+            self.snd_gameover = pygame.mixer.Sound(os.path.join(base_path, "assets", "gameover.wav"))
+
+            # Ajustes de volúmenes por defecto (valores entre 0.0 y 1.0)
+            self.snd_laser.set_volume(0.37)
+            self.snd_explosion.set_volume(0.05)
+            self.snd_hurt.set_volume(0.37)
+            self.snd_gameover.set_volume(0.5)
+        except Exception as error:
+            print("No se pudieron cargar los efectos de sonido:", error)
+            self.snd_laser = None
+            self.snd_explosion = None
+            self.snd_hurt = None
+            self.snd_gameover = None
+            self.snd_victory = None
+
         # Posicion inicial de la nave.
         self.player_rect.centerx = SCREEN_WIDTH // 2
         self.player_rect.bottom = SCREEN_HEIGHT - 20
@@ -255,6 +281,10 @@ class PlayState(State):
         new_bullet = pygame.Rect(self.player_rect.centerx - 2, self.player_rect.top, 5, 10)
         self.bullets.append(new_bullet)
 
+        # Sonido de disparo del jugador
+        if self.snd_laser:
+            self.snd_laser.play()
+
     def enemy_shoot(self, enemy):
         """
         Crea una bala enemiga.
@@ -263,6 +293,14 @@ class PlayState(State):
         # La bala enemiga aparece debajo del enemigo.
         new_bullet = pygame.Rect(enemy.rect.centerx - 2, enemy.rect.bottom, 5, 10)
         self.enemy_bullets.append(new_bullet)
+
+    def trigger_game_over(self):
+        """
+        Activa el Game Over y reproduce el sonido correspondiente.
+        """
+        self.game_over = True
+        if self.snd_gameover:
+            self.snd_gameover.play()
 
     def handle_events(self, events):
         """
@@ -339,7 +377,7 @@ class PlayState(State):
                     if self.score >= self.target_score:
                         self.complete_level()
                     else:
-                        self.game_over = True
+                        self.trigger_game_over()
                     return
 
         # Mover estrellas del fondo.
@@ -402,7 +440,9 @@ class PlayState(State):
                 self.enemies.remove(e)
 
                 if self.lives <= 0:
-                    self.game_over = True
+                    self.trigger_game_over()
+                elif self.snd_hurt:
+                    self.snd_hurt.play()
 
         # Actualizar balas del jugador.
         for b in self.bullets[:]:
@@ -422,6 +462,10 @@ class PlayState(State):
 
                     if e in self.enemies:
                         self.enemies.remove(e)
+
+                    # Sonido de explosión del enemigo al morir
+                    if self.snd_explosion:
+                        self.snd_explosion.play()
 
                     # Sumamos puntos al destruir un enemigo.
                     self.score += 10
@@ -443,7 +487,9 @@ class PlayState(State):
                 self.enemy_bullets.remove(eb)
 
                 if self.lives <= 0:
-                    self.game_over = True
+                    self.trigger_game_over()
+                elif self.snd_hurt:
+                    self.snd_hurt.play()
 
         # En contrarreloj, si alcanzas el puntaje antes de que termine el tiempo, ganas.
         if self.mode == "CONTRARRELOJ" and self.score >= self.target_score:
