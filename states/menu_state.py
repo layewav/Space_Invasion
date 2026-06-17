@@ -174,7 +174,8 @@ class MenuState(State):
             credits = [
                 "Proyecto hecho por:",
                 "Garcia Guzman Victor Manuel",
-                "Aqui van ustedes xD",
+                "Rojas Zavala Miguel Angel",
+                "Jose Angel Gonzalez Lacarra",
             ]
 
             y = 540
